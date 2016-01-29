@@ -5,6 +5,8 @@
 //  Created by qihaijun on 1/29/16.
 //  Copyright © 2016 VictorChee. All rights reserved.
 //
+//  https://www.objc.io/issues/5-ios7/multitasking/
+//  http://www.cocoachina.com/industry/20131114/7350.html
 
 import UIKit
 
@@ -16,31 +18,45 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        application.setMinimumBackgroundFetchInterval(UIApplicationBackgroundFetchIntervalMinimum)
         return true
     }
 
-    func applicationWillResignActive(application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
+    func application(application: UIApplication, performFetchWithCompletionHandler completionHandler: (UIBackgroundFetchResult) -> Void) {
+        let sessionConfiguration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        let session = NSURLSession(configuration: sessionConfiguration)
+        guard let url = NSURL(string: "https://victorchee.github.io/test/test.json") else {
+            completionHandler(UIBackgroundFetchResult.Failed)
+            return
+        }
+        let task = session.dataTaskWithURL(url) { (data, response, error) -> Void in
+            if let _ = error {
+                completionHandler(.Failed)
+                return
+            }
+            
+            if let data = data {
+                let string = NSString(data: data, encoding: NSUTF8StringEncoding)
+                print(string)
+                completionHandler(.NewData)
+            } else {
+                completionHandler(.NoData)
+            }
+        }
+        task.resume()
     }
-
-    func applicationDidEnterBackground(application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+    
+    func application(application: UIApplication, didReceiveRemoteNotification userInfo: [NSObject : AnyObject], fetchCompletionHandler completionHandler: (UIBackgroundFetchResult) -> Void) {
+        
+        // start background fetch here
+        
+        completionHandler(UIBackgroundFetchResult.NewData)
     }
-
-    func applicationWillEnterForeground(application: UIApplication) {
-        // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+    
+    var backgroundSessionCompletionHandler: (() -> Void)?
+    
+    func application(application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: () -> Void) {
+        backgroundSessionCompletionHandler = completionHandler
     }
-
-    func applicationDidBecomeActive(application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-    }
-
-    func applicationWillTerminate(application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
-
-
 }
 
